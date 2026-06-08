@@ -258,6 +258,14 @@
     font-weight: 700;
     white-space: nowrap;
   }
+  .legend-count.over-limit { background: #c0392b; }
+  .legend-item.over-limit  { border-color: #e74c3c; background: #fff5f5; }
+  .avail-badge {
+    font-size: 9px; font-weight: 600; color: var(--text-dim);
+    white-space: nowrap; margin-left: 3px;
+  }
+  .avail-badge.ok   { color: var(--green); }
+  .avail-badge.warn { color: #c0392b; }
 
   /* Lock visuals in assembly mode */
   body.assembly-mode .lockable {
@@ -561,9 +569,14 @@
       <div id="stats">
         <div>Grid: <b id="stat-dims">0×0</b></div>
         <div>16×16 Plates: <b id="stat-plates">0</b></div>
-        <div>Total studs: <b id="stat-total">0</b></div>
+        <div>Cells: <b id="stat-total">0</b></div>
         <div>Filled: <b id="stat-filled">0</b></div>
-        <div>Remaining: <b id="stat-remaining">0</b></div>
+        <div>Unfilled: <b id="stat-remaining">0</b></div>
+        <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+        <div>Set pieces: <b id="stat-set-total">—</b></div>
+        <div>Used: <b id="stat-set-used">0</b></div>
+        <div>Remaining: <b id="stat-set-remaining">—</b></div>
+        <div>Status: <b id="stat-over-limit">—</b></div>
       </div>
     </div>
 
@@ -651,33 +664,21 @@
 // ═══════════════════════════════════════════════════════
 // LEGO palette
 // ═══════════════════════════════════════════════════════
+// LEGO World Map #31203 — official piece inventory
 const PALETTE = [
-  { name: 'White',                 hex: '#FFFFFF' },
-  { name: 'Light Gray',            hex: '#A0A5A9' },
-  { name: 'Dark Gray',             hex: '#6C6E68' },
-  { name: 'Black',                 hex: '#1B2A34' },
-  { name: 'Tan / Beige',           hex: '#E4CD9E' },
-  { name: 'Dark Tan',              hex: '#958A73' },
-  { name: 'Brown',                 hex: '#582A12' },
-  { name: 'Medium Brown',          hex: '#774421' },
-  { name: 'Red',                   hex: '#C91A09' },
-  { name: 'Dark Red',              hex: '#720E0F' },
-  { name: 'Orange',                hex: '#FE8A18' },
-  { name: 'Yellow',                hex: '#F2CD37' },
-  { name: 'Yellowish Green',       hex: '#DFEEA5' },
-  { name: 'Light Green',           hex: '#A8BD4B' },
-  { name: 'Green',                 hex: '#4B9F4A' },
-  { name: 'Dark Green',            hex: '#184632' },
-  { name: 'Bright Light Blue',     hex: '#9FC3E9' },
-  { name: 'Medium Azure',          hex: '#5A93DB' },
-  { name: 'Dark Azure',            hex: '#078BC9' },
-  { name: 'Blue',                  hex: '#0055BF' },
-  { name: 'Dark Blue',             hex: '#003069' },
-  { name: 'Sand Blue',             hex: '#5F748D' },
-  { name: 'Lilac',                 hex: '#9C95C7' },
-  { name: 'Coral',                 hex: '#FF698F' },
-  { name: 'Salmon',                hex: '#F08080' },
+  { name: 'Brick Yellow',           hex: '#D9BB7B', qty: 725  },
+  { name: 'Bright Bluish Green',    hex: '#00878A', qty: 1879 },
+  { name: 'Bright Green',           hex: '#4B9F4A', qty: 601  },
+  { name: 'Bright Orange',          hex: '#FE8A18', qty: 601  },
+  { name: 'Bright Yellowish Green', hex: '#BBD959', qty: 1060 },
+  { name: 'Dark Stone Grey',        hex: '#595D60', qty: 32   },
+  { name: 'Earth Blue',             hex: '#1E4A7A', qty: 393  },
+  { name: 'Flame Yellowish Orange', hex: '#FFB100', qty: 599  },
+  { name: 'Medium Azur',            hex: '#6CACE4', qty: 1607 },
+  { name: 'Multicombination',       hex: '#F5F0E8', qty: 52   },
+  { name: 'Vibrant Coral',          hex: '#FF698F', qty: 601  },
 ];
+const SET_TOTAL_PIECES = PALETTE.reduce((s, p) => s + p.qty, 0);
 
 const TYPE_LABELS = { stud: 'Stud', tile: 'Flat', hole: 'Hole' };
 
@@ -717,8 +718,8 @@ let state = {
   imageOffsetX: 0,
   imageOffsetY: 0,
   imgPanMode: false,
-  selectedColor: PALETTE[3].hex,
-  selectedColorName: PALETTE[3].name,
+  selectedColor: PALETTE[8].hex,
+  selectedColorName: PALETTE[8].name,
   selectedType: 'stud',
   tool: 'paint',
   isPainting: false,
@@ -819,7 +820,7 @@ function init() {
   buildPalette();
   drawTypePreviews();
   resizeGrid(true);
-  selectColor(PALETTE[3].hex, PALETTE[3].name);
+  selectColor(PALETTE[8].hex, PALETTE[8].name);
   selectType('stud');
 }
 
@@ -878,7 +879,7 @@ function buildPalette() {
     const sw = document.createElement('div');
     sw.className = 'color-swatch';
     sw.style.background = c.hex;
-    sw.title = c.name;
+    sw.title = `${c.name}  ·  ${c.qty.toLocaleString('en-US')} pieces`;
     sw.dataset.hex = c.hex;
     sw.addEventListener('click', () => selectColor(c.hex, c.name));
     el.appendChild(sw);
@@ -1386,21 +1387,48 @@ function floodFill(startCol, startRow, targetColor, fillColor, fillType) {
 // ═══════════════════════════════════════════════════════
 // Stats & Legend
 // ═══════════════════════════════════════════════════════
+function getGlobalColorTotals() {
+  const totals = {};
+  for (const cell of state.cells) {
+    if (!cell) continue;
+    const hex = cell.color.toUpperCase();
+    totals[hex] = (totals[hex] || 0) + 1;
+  }
+  return totals;
+}
+
 function updateStats() {
-  const total      = state.cols * state.rows;
-  const filled     = state.cells.filter(c => c !== null).length;
-  const plateCols  = Math.ceil(state.cols / 16);
-  const plateRows  = Math.ceil(state.rows / 16);
+  const total     = state.cols * state.rows;
+  const filled    = state.cells.filter(c => c !== null).length;
+  const plateCols = Math.ceil(state.cols / 16);
+  const plateRows = Math.ceil(state.rows / 16);
   document.getElementById('stat-dims').textContent      = `${state.cols}×${state.rows}`;
   document.getElementById('stat-plates').textContent    = `${plateCols}×${plateRows} = ${plateCols * plateRows}`;
   document.getElementById('stat-total').textContent     = total.toLocaleString('en-US');
   document.getElementById('stat-filled').textContent    = filled.toLocaleString('en-US');
   document.getElementById('stat-remaining').textContent = (total - filled).toLocaleString('en-US');
+
+  // Set piece inventory tracking
+  const colorTotals = getGlobalColorTotals();
+  const setUsed     = Object.values(colorTotals).reduce((s, n) => s + n, 0);
+  const overColors  = PALETTE.filter(p => (colorTotals[p.hex.toUpperCase()] || 0) > p.qty);
+  document.getElementById('stat-set-total').textContent     = SET_TOTAL_PIECES.toLocaleString('en-US');
+  document.getElementById('stat-set-used').textContent      = setUsed.toLocaleString('en-US');
+  document.getElementById('stat-set-remaining').textContent = (SET_TOTAL_PIECES - setUsed).toLocaleString('en-US');
+  const olEl = document.getElementById('stat-over-limit');
+  if (overColors.length === 0) {
+    olEl.textContent = filled > 0 ? '✓ All within limits' : '—';
+    olEl.style.color = filled > 0 ? 'var(--green)' : '';
+  } else {
+    olEl.textContent = '⚠ ' + overColors.map(p => p.name.split(' ')[0]).join(', ');
+    olEl.style.color = 'var(--accent)';
+  }
+
   updateLegend();
   if (state.selectedPlate) renderPlatePanel();
 }
 
-function buildLegendInto(listEl, counts, emptyMsg) {
+function buildLegendInto(listEl, counts, emptyMsg, colorTotals) {
   const sorted = Object.values(counts).sort((a, b) => b.n - a.n);
   listEl.innerHTML = '';
   if (sorted.length === 0) {
@@ -1408,10 +1436,24 @@ function buildLegendInto(listEl, counts, emptyMsg) {
     return;
   }
   for (const { color, type, n } of sorted) {
-    const entry = PALETTE.find(p => p.hex.toUpperCase() === color.toUpperCase());
-    const name  = entry ? entry.name : color;
-    const item  = document.createElement('div');
+    const entry   = PALETTE.find(p => p.hex.toUpperCase() === color.toUpperCase());
+    const name    = entry ? entry.name : color;
+    const item    = document.createElement('div');
     item.className = 'legend-item';
+
+    // Availability check (only when colorTotals passed — global legend)
+    let isOver = false;
+    if (colorTotals && entry) {
+      const usedTotal = colorTotals[color.toUpperCase()] || 0;
+      isOver = usedTotal > entry.qty;
+      const remaining = entry.qty - usedTotal;
+      if (isOver) {
+        item.classList.add('over-limit');
+        item.title = `${usedTotal} used / ${entry.qty} available — ⚠ ${usedTotal - entry.qty} over limit!`;
+      } else {
+        item.title = `${usedTotal} used / ${entry.qty} available — ${remaining} remaining`;
+      }
+    }
 
     const cvs = document.createElement('canvas');
     cvs.width = cvs.height = 18;
@@ -1423,12 +1465,23 @@ function buildLegendInto(listEl, counts, emptyMsg) {
     txt.textContent = `${name} · ${TYPE_LABELS[type]}`;
 
     const cnt = document.createElement('span');
-    cnt.className = 'legend-count';
+    cnt.className = 'legend-count' + (isOver ? ' over-limit' : '');
     cnt.textContent = n.toLocaleString('en-US');
 
     item.appendChild(cvs);
     item.appendChild(txt);
     item.appendChild(cnt);
+
+    // Availability badge (global legend only)
+    if (colorTotals && entry) {
+      const usedTotal = colorTotals[color.toUpperCase()] || 0;
+      const remaining = entry.qty - usedTotal;
+      const avail     = document.createElement('span');
+      avail.className = 'avail-badge ' + (isOver ? 'warn' : 'ok');
+      avail.textContent = isOver ? `−${(usedTotal - entry.qty).toLocaleString('en-US')}` : `${remaining.toLocaleString('en-US')} left`;
+      item.appendChild(avail);
+    }
+
     listEl.appendChild(item);
   }
 }
@@ -1441,7 +1494,7 @@ function updateLegend() {
     if (!counts[key]) counts[key] = { color: cell.color, type: cell.type, n: 0 };
     counts[key].n++;
   }
-  buildLegendInto(document.getElementById('legend-list'), counts, 'Empty grid');
+  buildLegendInto(document.getElementById('legend-list'), counts, 'Empty grid', getGlobalColorTotals());
 }
 
 function platePieceCounts(pr, pc) {
