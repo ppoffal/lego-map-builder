@@ -266,6 +266,9 @@
     filter: grayscale(.4);
   }
   body.assembly-mode #canvas-container { cursor: zoom-in; }
+  body.img-pan-mode  #canvas-container { cursor: grab; }
+  body.img-pan-mode  #canvas-container.dragging { cursor: grabbing; }
+  #img-pan-btn.active { background: #fff0f3; border-color: var(--accent); color: var(--accent); }
 
   /* ── Canvas area ─────────────────────────────── */
   #canvas-wrap {
@@ -470,7 +473,8 @@
     <button class="btn-secondary" onclick="rotateImage(90)" title="Rotate 90° CW">↻</button>
     <input type="range" id="img-scale" min="25" max="400" value="100" oninput="updateImageScale(this.value)" style="width:75px">
     <span id="scale-val" style="min-width:38px;font-size:12px;color:var(--text-dim)">100%</span>
-    <button class="btn-secondary" onclick="resetImageTransform()" title="Reset rotation and zoom">Reset</button>
+    <button class="btn-secondary" id="img-pan-btn" onclick="toggleImgPanMode()" title="Drag image to reposition">🖐 Move</button>
+    <button class="btn-secondary" onclick="resetImageTransform()" title="Reset all transforms">Reset</button>
   </div>
 
   <div class="tb-group">
@@ -710,6 +714,9 @@ let state = {
   gridOpacity: 0.55,
   imageRotation: 0,
   imageScale: 1.0,
+  imageOffsetX: 0,
+  imageOffsetY: 0,
+  imgPanMode: false,
   selectedColor: PALETTE[3].hex,
   selectedColorName: PALETTE[3].name,
   selectedType: 'stud',
@@ -910,9 +917,16 @@ function selectTool(tool) {
 // ═══════════════════════════════════════════════════════
 function toggleAssemblyMode(on) {
   state.assemblyMode = on;
+  if (on && state.imgPanMode) toggleImgPanMode();
   document.body.classList.toggle('assembly-mode', on);
   document.getElementById('mode-label').textContent = on ? '🔒 Assembly' : '✏️ Edit';
   if (!on) closeModal();
+}
+
+function toggleImgPanMode() {
+  state.imgPanMode = !state.imgPanMode;
+  document.getElementById('img-pan-btn').classList.toggle('active', state.imgPanMode);
+  document.body.classList.toggle('img-pan-mode', state.imgPanMode);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -937,6 +951,9 @@ function loadImage(event) {
 
 function clearImage() {
   state.bgImage = null;
+  if (state.imgPanMode) toggleImgPanMode();
+  state.imageOffsetX = 0;
+  state.imageOffsetY = 0;
   document.getElementById('img-transform-group').style.display = 'none';
   renderBackground();
 }
@@ -964,6 +981,8 @@ function updateImageScale(val) {
 function resetImageTransform() {
   state.imageRotation = 0;
   state.imageScale = 1;
+  state.imageOffsetX = 0;
+  state.imageOffsetY = 0;
   document.getElementById('img-rotation').value = 0;
   document.getElementById('rotation-val').textContent = '0°';
   document.getElementById('img-scale').value = 100;
@@ -993,7 +1012,7 @@ function suggestFromImage() {
   const octx = off.getContext('2d');
   octx.imageSmoothingEnabled = true;
   octx.imageSmoothingQuality = 'high';
-  octx.translate(cols / 2, rows / 2);
+  octx.translate(cols / 2 + state.imageOffsetX * cols, rows / 2 + state.imageOffsetY * rows);
   octx.rotate(state.imageRotation * Math.PI / 180);
   octx.scale(state.imageScale, state.imageScale);
   octx.drawImage(state.bgImage, -cols / 2, -rows / 2, cols, rows);
@@ -1037,7 +1056,7 @@ function renderBackground() {
   if (state.bgImage) {
     bgCtx.save();
     bgCtx.globalAlpha = state.imageOpacity;
-    bgCtx.translate(W / 2, H / 2);
+    bgCtx.translate(W / 2 + state.imageOffsetX * W, H / 2 + state.imageOffsetY * H);
     bgCtx.rotate(state.imageRotation * Math.PI / 180);
     bgCtx.scale(state.imageScale, state.imageScale);
     bgCtx.drawImage(state.bgImage, -W / 2, -H / 2, W, H);
@@ -1242,8 +1261,22 @@ function applyTool(col, row) {
   }
 }
 
+let imgDragAnchor = null;
+
 gridCanvas.addEventListener('mousedown', e => {
   if (e.button !== 0) return;
+
+  // Image pan mode — drag to reposition the guide image
+  if (state.imgPanMode && state.bgImage) {
+    imgDragAnchor = {
+      x: e.clientX, y: e.clientY,
+      ox: state.imageOffsetX, oy: state.imageOffsetY,
+      W: bgCanvas.width, H: bgCanvas.height
+    };
+    document.getElementById('canvas-container').classList.add('dragging');
+    return;
+  }
+
   const cell = getCellFromEvent(e);
   if (!cell) return;
   selectPlate(cell.col, cell.row);
@@ -1267,6 +1300,17 @@ gridCanvas.addEventListener('mousedown', e => {
 });
 
 gridCanvas.addEventListener('mousemove', e => {
+  // Image drag
+  if (imgDragAnchor) {
+    const rect = gridCanvas.getBoundingClientRect();
+    const scaleX = gridCanvas.width  / rect.width;
+    const scaleY = gridCanvas.height / rect.height;
+    state.imageOffsetX = imgDragAnchor.ox + (e.clientX - imgDragAnchor.x) * scaleX / imgDragAnchor.W;
+    state.imageOffsetY = imgDragAnchor.oy + (e.clientY - imgDragAnchor.y) * scaleY / imgDragAnchor.H;
+    renderBackground();
+    return;
+  }
+
   const cell = getCellFromEvent(e);
   if (cell) {
     const plateCol  = Math.floor(cell.col / 16) + 1;
@@ -1284,6 +1328,10 @@ gridCanvas.addEventListener('mousemove', e => {
 
 // Commit strokes at window level so releasing outside the canvas still works
 window.addEventListener('mouseup', () => {
+  if (imgDragAnchor) {
+    imgDragAnchor = null;
+    document.getElementById('canvas-container').classList.remove('dragging');
+  }
   if (!state.isPainting && !pendingSnapshot) return;
   state.isPainting = false;
   commitStroke();
