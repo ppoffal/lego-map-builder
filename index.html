@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LEGO World Map #31203 — Editor de Padrões</title>
+<title>LEGO World Map #31203 — Pattern Editor</title>
 <style>
   :root {
     --bg:          #eef1f8;
@@ -447,45 +447,45 @@
   <h1>🧱 LEGO World Map #31203</h1>
 
   <div class="tb-group lockable">
-    <label>Colunas</label>
+    <label>Columns</label>
     <input type="number" id="inp-cols" value="128" min="10" max="400">
-    <label>Linhas</label>
+    <label>Rows</label>
     <input type="number" id="inp-rows" value="80" min="10" max="300">
-    <button class="btn-secondary" onclick="resizeGrid()">Aplicar</button>
+    <button class="btn-secondary" onclick="resizeGrid()">Apply</button>
   </div>
 
   <div class="tb-group lockable">
-    <label>Imagem guia</label>
+    <label>Guide image</label>
     <button class="btn-secondary" onclick="document.getElementById('file-input').click()">📁 Upload</button>
     <input type="file" id="file-input" accept="image/*" style="display:none" onchange="loadImage(event)">
     <button class="btn-danger" onclick="clearImage()">✕</button>
-    <button class="btn-primary" id="suggest-btn" onclick="suggestFromImage()" title="Gera o padrão automaticamente a partir da imagem">✨ Sugerir</button>
+    <button class="btn-primary" id="suggest-btn" onclick="suggestFromImage()" title="Auto-generate pattern from image">✨ Suggest</button>
   </div>
 
   <div class="tb-group">
-    <label>Opacidade img</label>
+    <label>Img opacity</label>
     <input type="range" id="img-opacity" min="0" max="100" value="40" oninput="updateOpacity(this.value)">
     <span id="opacity-val">40%</span>
   </div>
 
   <div class="tb-group">
-    <label>Grade</label>
+    <label>Grid</label>
     <input type="range" id="grid-opacity" min="0" max="100" value="55" oninput="updateGridOpacity(this.value)">
     <span id="grid-opacity-val">55%</span>
   </div>
 
   <div class="tb-group lockable">
-    <button class="btn-secondary" id="undo-btn" onclick="undo()" title="Desfazer (Ctrl+Z)" disabled>↶ Desfazer</button>
-    <button class="btn-danger"    onclick="clearGrid()">🗑 Limpar</button>
+    <button class="btn-secondary" id="undo-btn" onclick="undo()" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+    <button class="btn-danger"    onclick="clearGrid()">🗑 Clear</button>
     <button class="btn-secondary" onclick="exportPNG()">💾 PNG</button>
-    <button class="btn-secondary" onclick="saveJSON()">💾 Salvar</button>
-    <button class="btn-secondary" onclick="document.getElementById('load-json').click()">📂 Carregar</button>
+    <button class="btn-secondary" onclick="saveJSON()">💾 Save</button>
+    <button class="btn-secondary" onclick="document.getElementById('load-json').click()">📂 Load</button>
     <input type="file" id="load-json" accept=".json" style="display:none" onchange="loadJSON(event)">
   </div>
 
   <div class="tb-group tb-mode">
     <label class="switch-label">
-      <span id="mode-label">✏️ Edição</span>
+      <span id="mode-label">✏️ Edit</span>
       <label class="switch">
         <input type="checkbox" id="assembly-toggle" onchange="toggleAssemblyMode(this.checked)">
         <span class="slider"></span>
@@ -498,63 +498,63 @@
 <div id="main">
   <div id="sidebar">
 
-    <!-- Ferramentas -->
+    <!-- Tools -->
     <div class="card lockable">
-      <div class="section-title">Ferramentas</div>
+      <div class="section-title">Tools</div>
       <div id="tools">
-        <button class="tool-btn active" data-tool="paint"   onclick="selectTool('paint')"   title="Pintar (P)">🖌️<span class="tool-label">Pintar</span></button>
-        <button class="tool-btn" data-tool="eraser"  onclick="selectTool('eraser')"  title="Apagar (E)">🧹<span class="tool-label">Apagar</span></button>
-        <button class="tool-btn" data-tool="fill"    onclick="selectTool('fill')"    title="Preencher (F)">🪣<span class="tool-label">Preencher</span></button>
-        <button class="tool-btn" data-tool="eyedrop" onclick="selectTool('eyedrop')" title="Conta-gotas (I)">💉<span class="tool-label">Cor</span></button>
+        <button class="tool-btn active" data-tool="paint"   onclick="selectTool('paint')"   title="Paint (P)">🖌️<span class="tool-label">Paint</span></button>
+        <button class="tool-btn" data-tool="eraser"  onclick="selectTool('eraser')"  title="Erase (E)">🧹<span class="tool-label">Erase</span></button>
+        <button class="tool-btn" data-tool="fill"    onclick="selectTool('fill')"    title="Fill (F)">🪣<span class="tool-label">Fill</span></button>
+        <button class="tool-btn" data-tool="eyedrop" onclick="selectTool('eyedrop')" title="Eyedrop (I)">💉<span class="tool-label">Color</span></button>
       </div>
     </div>
 
-    <!-- Tipo de Peça -->
+    <!-- Piece Type -->
     <div class="card lockable">
-      <div class="section-title">Tipo de Peça 1×1</div>
+      <div class="section-title">Piece Type 1×1</div>
       <div id="piece-types">
         <button class="type-btn active" data-type="stud" onclick="selectType('stud')">
-          <canvas id="preview-stud" width="36" height="36"></canvas><span>Com<br>encaixe</span>
+          <canvas id="preview-stud" width="36" height="36"></canvas><span>Stud</span>
         </button>
         <button class="type-btn" data-type="tile" onclick="selectType('tile')">
-          <canvas id="preview-tile" width="36" height="36"></canvas><span>Lisa<br>(flat)</span>
+          <canvas id="preview-tile" width="36" height="36"></canvas><span>Flat<br>(tile)</span>
         </button>
         <button class="type-btn" data-type="hole" onclick="selectType('hole')">
-          <canvas id="preview-hole" width="36" height="36"></canvas><span>Com<br>furo</span>
+          <canvas id="preview-hole" width="36" height="36"></canvas><span>Hole</span>
         </button>
       </div>
     </div>
 
-    <!-- Cor selecionada -->
+    <!-- Selected color -->
     <div class="card lockable">
-      <div class="section-title">Cor + Peça atual</div>
+      <div class="section-title">Color + Current Piece</div>
       <div id="selected-color-preview">
         <canvas id="current-piece-canvas" width="46" height="46"></canvas>
         <div id="current-color-name">—</div>
       </div>
     </div>
 
-    <!-- Paleta -->
+    <!-- Palette -->
     <div class="card lockable">
-      <div class="section-title">Paleta LEGO</div>
+      <div class="section-title">LEGO Palette</div>
       <div id="palette"></div>
     </div>
 
     <!-- Stats -->
     <div class="card">
-      <div class="section-title">Estatísticas</div>
+      <div class="section-title">Statistics</div>
       <div id="stats">
-        <div>Grade: <b id="stat-dims">0×0</b></div>
-        <div>Placas 16×16: <b id="stat-plates">0</b></div>
-        <div>Total pinos: <b id="stat-total">0</b></div>
-        <div>Preenchidos: <b id="stat-filled">0</b></div>
-        <div>Restantes: <b id="stat-remaining">0</b></div>
+        <div>Grid: <b id="stat-dims">0×0</b></div>
+        <div>16×16 Plates: <b id="stat-plates">0</b></div>
+        <div>Total studs: <b id="stat-total">0</b></div>
+        <div>Filled: <b id="stat-filled">0</b></div>
+        <div>Remaining: <b id="stat-remaining">0</b></div>
       </div>
     </div>
 
-    <!-- Legenda global -->
+    <!-- Global legend -->
     <div class="card">
-      <div class="section-title">Legenda global</div>
+      <div class="section-title">Global Legend</div>
       <div id="legend-list"></div>
     </div>
 
@@ -570,10 +570,10 @@
 
   <!-- Right panel -->
   <div id="right-panel">
-    <div class="assembly-hint">🔒 Modo Montagem ativo — edição bloqueada. Clique numa placa para ampliar.</div>
+    <div class="assembly-hint">🔒 Assembly Mode active — editing locked. Click a plate to enlarge.</div>
     <div>
-      <div id="plate-title">— Nenhuma placa —</div>
-      <div id="plate-subtitle">Clique em qualquer célula para selecionar</div>
+      <div id="plate-title">— No plate —</div>
+      <div id="plate-subtitle">Click any cell to select</div>
       <div id="plate-progress-wrap">
         <div id="plate-progress-bg"><div id="plate-progress-fill"></div></div>
         <span id="plate-progress-text"></span>
@@ -585,9 +585,9 @@
     </div>
 
     <div>
-      <div class="section-title">Peças desta placa</div>
+      <div class="section-title">Pieces in this plate</div>
       <div id="plate-legend">
-        <div id="plate-empty-msg">Selecione uma placa<br>para ver o detalhamento</div>
+        <div id="plate-empty-msg">Select a plate<br>to see the breakdown</div>
       </div>
     </div>
   </div>
@@ -598,20 +598,20 @@
   <div id="zoom-level">100%</div>
   <button onclick="zoom(+1)" title="Zoom in">+</button>
 </div>
-<div id="coords">Col: — / Lin: —</div>
+<div id="coords">Col: — / Row: —</div>
 
 <!-- ── PLATE MODAL ───────────────────────────────── -->
 <div id="plate-modal">
   <div class="modal-backdrop" onclick="closeModal()"></div>
   <div class="modal-card">
     <div class="modal-header">
-      <button class="modal-nav-btn" onclick="navPlate(-1)" title="Placa anterior">‹</button>
+      <button class="modal-nav-btn" onclick="navPlate(-1)" title="Previous plate">‹</button>
       <div>
-        <h2 id="modal-plate-title">Placa</h2>
+        <h2 id="modal-plate-title">Plate</h2>
         <div class="mh-sub" id="modal-plate-sub">16×16</div>
       </div>
-      <button class="modal-nav-btn" onclick="navPlate(1)" title="Próxima placa">›</button>
-      <button class="modal-close" onclick="closeModal()" title="Fechar (Esc)">✕</button>
+      <button class="modal-nav-btn" onclick="navPlate(1)" title="Next plate">›</button>
+      <button class="modal-close" onclick="closeModal()" title="Close (Esc)">✕</button>
     </div>
     <div class="modal-body">
       <div class="modal-canvas-wrap">
@@ -620,11 +620,11 @@
       <div class="modal-side">
         <div class="modal-progress-box">
           <div class="big-pct"><span id="modal-pct">0</span>%</div>
-          <div class="lbl" id="modal-progress-text">0 / 256 pinos</div>
+          <div class="lbl" id="modal-progress-text">0 / 256 studs</div>
           <div id="modal-progress-bg"><div id="modal-progress-fill"></div></div>
         </div>
         <div>
-          <div class="section-title">Peças necessárias</div>
+          <div class="section-title">Required pieces</div>
           <div id="modal-legend"></div>
         </div>
       </div>
@@ -637,34 +637,34 @@
 // LEGO palette
 // ═══════════════════════════════════════════════════════
 const PALETTE = [
-  { name: 'Branco',                hex: '#FFFFFF' },
-  { name: 'Cinza Claro',           hex: '#A0A5A9' },
-  { name: 'Cinza Escuro',          hex: '#6C6E68' },
-  { name: 'Preto',                 hex: '#1B2A34' },
-  { name: 'Bege / Tan',            hex: '#E4CD9E' },
-  { name: 'Tan Escuro',            hex: '#958A73' },
-  { name: 'Marrom',                hex: '#582A12' },
-  { name: 'Marrom Médio',          hex: '#774421' },
-  { name: 'Vermelho',              hex: '#C91A09' },
-  { name: 'Vermelho Escuro',       hex: '#720E0F' },
-  { name: 'Laranja',               hex: '#FE8A18' },
-  { name: 'Amarelo',               hex: '#F2CD37' },
-  { name: 'Amarelo Esverdeado',    hex: '#DFEEA5' },
-  { name: 'Verde Claro',           hex: '#A8BD4B' },
-  { name: 'Verde',                 hex: '#4B9F4A' },
-  { name: 'Verde Escuro',          hex: '#184632' },
-  { name: 'Azul Claro Brilhante',  hex: '#9FC3E9' },
-  { name: 'Azure Médio',           hex: '#5A93DB' },
-  { name: 'Azure Escuro',          hex: '#078BC9' },
-  { name: 'Azul',                  hex: '#0055BF' },
-  { name: 'Azul Escuro',           hex: '#003069' },
-  { name: 'Azul Areia',            hex: '#5F748D' },
-  { name: 'Lilás',                 hex: '#9C95C7' },
+  { name: 'White',                 hex: '#FFFFFF' },
+  { name: 'Light Gray',            hex: '#A0A5A9' },
+  { name: 'Dark Gray',             hex: '#6C6E68' },
+  { name: 'Black',                 hex: '#1B2A34' },
+  { name: 'Tan / Beige',           hex: '#E4CD9E' },
+  { name: 'Dark Tan',              hex: '#958A73' },
+  { name: 'Brown',                 hex: '#582A12' },
+  { name: 'Medium Brown',          hex: '#774421' },
+  { name: 'Red',                   hex: '#C91A09' },
+  { name: 'Dark Red',              hex: '#720E0F' },
+  { name: 'Orange',                hex: '#FE8A18' },
+  { name: 'Yellow',                hex: '#F2CD37' },
+  { name: 'Yellowish Green',       hex: '#DFEEA5' },
+  { name: 'Light Green',           hex: '#A8BD4B' },
+  { name: 'Green',                 hex: '#4B9F4A' },
+  { name: 'Dark Green',            hex: '#184632' },
+  { name: 'Bright Light Blue',     hex: '#9FC3E9' },
+  { name: 'Medium Azure',          hex: '#5A93DB' },
+  { name: 'Dark Azure',            hex: '#078BC9' },
+  { name: 'Blue',                  hex: '#0055BF' },
+  { name: 'Dark Blue',             hex: '#003069' },
+  { name: 'Sand Blue',             hex: '#5F748D' },
+  { name: 'Lilac',                 hex: '#9C95C7' },
   { name: 'Coral',                 hex: '#FF698F' },
   { name: 'Salmon',                hex: '#F08080' },
 ];
 
-const TYPE_LABELS = { stud: 'Encaixe', tile: 'Lisa', hole: 'Furo' };
+const TYPE_LABELS = { stud: 'Stud', tile: 'Flat', hole: 'Hole' };
 
 // Pre-computed RGB for fast nearest-color matching
 function hexToRgb(hex) {
@@ -807,7 +807,7 @@ function resizeGrid(skipConfirm) {
   const newCols = parseInt(document.getElementById('inp-cols').value);
   const newRows = parseInt(document.getElementById('inp-rows').value);
   if (!skipConfirm && state.cells.some(c => c !== null)) {
-    if (!confirm('Redimensionar vai limpar as células. Continuar?')) return;
+    if (!confirm('Resizing will clear all cells. Continue?')) return;
   }
   if (!skipConfirm) recordUndo();
   state.cols  = newCols;
@@ -898,7 +898,7 @@ function selectTool(tool) {
 function toggleAssemblyMode(on) {
   state.assemblyMode = on;
   document.body.classList.toggle('assembly-mode', on);
-  document.getElementById('mode-label').textContent = on ? '🔒 Montagem' : '✏️ Edição';
+  document.getElementById('mode-label').textContent = on ? '🔒 Assembly' : '✏️ Edit';
   if (!on) closeModal();
 }
 
@@ -927,11 +927,11 @@ function clearImage() {
 function suggestFromImage() {
   if (state.assemblyMode) return;
   if (!state.bgImage) {
-    alert('Carregue uma imagem-guia primeiro (botão 📁 Upload).');
+    alert('Upload a guide image first (📁 Upload button).');
     return;
   }
   if (state.cells.some(c => c !== null) &&
-      !confirm('Isso vai gerar um novo padrão a partir da imagem e substituir o que já está na grade. Continuar?')) {
+      !confirm('This will generate a new pattern from the image and replace what\'s in the grid. Continue?')) {
     return;
   }
 
@@ -1220,7 +1220,7 @@ gridCanvas.addEventListener('mousemove', e => {
     const pinCol    = (cell.col % 16) + 1;
     const pinRow    = (cell.row % 16) + 1;
     document.getElementById('coords').textContent =
-      `Col: ${cell.col + 1} / Lin: ${cell.row + 1}  |  Placa ${plateLabel}  ·  pino ${pinCol}×${pinRow}`;
+      `Col: ${cell.col + 1} / Row: ${cell.row + 1}  |  Plate ${plateLabel}  ·  stud ${pinCol}×${pinRow}`;
   }
   if (!state.isPainting || !cell || state.assemblyMode) return;
   if (state.tool === 'fill' || state.tool === 'eyedrop') return;
@@ -1290,9 +1290,9 @@ function updateStats() {
   const plateRows  = Math.ceil(state.rows / 16);
   document.getElementById('stat-dims').textContent      = `${state.cols}×${state.rows}`;
   document.getElementById('stat-plates').textContent    = `${plateCols}×${plateRows} = ${plateCols * plateRows}`;
-  document.getElementById('stat-total').textContent     = total.toLocaleString('pt-BR');
-  document.getElementById('stat-filled').textContent    = filled.toLocaleString('pt-BR');
-  document.getElementById('stat-remaining').textContent = (total - filled).toLocaleString('pt-BR');
+  document.getElementById('stat-total').textContent     = total.toLocaleString('en-US');
+  document.getElementById('stat-filled').textContent    = filled.toLocaleString('en-US');
+  document.getElementById('stat-remaining').textContent = (total - filled).toLocaleString('en-US');
   updateLegend();
   if (state.selectedPlate) renderPlatePanel();
 }
@@ -1321,7 +1321,7 @@ function buildLegendInto(listEl, counts, emptyMsg) {
 
     const cnt = document.createElement('span');
     cnt.className = 'legend-count';
-    cnt.textContent = n.toLocaleString('pt-BR');
+    cnt.textContent = n.toLocaleString('en-US');
 
     item.appendChild(cvs);
     item.appendChild(txt);
@@ -1338,7 +1338,7 @@ function updateLegend() {
     if (!counts[key]) counts[key] = { color: cell.color, type: cell.type, n: 0 };
     counts[key].n++;
   }
-  buildLegendInto(document.getElementById('legend-list'), counts, 'Grade vazia');
+  buildLegendInto(document.getElementById('legend-list'), counts, 'Empty grid');
 }
 
 function platePieceCounts(pr, pc) {
@@ -1403,11 +1403,11 @@ function renderPlatePanel() {
   const { counts, total, filled } = platePieceCounts(pr, pc);
   const pct = total > 0 ? Math.round(filled / total * 100) : 0;
 
-  document.getElementById('plate-title').textContent    = `Placa ${label}`;
-  document.getElementById('plate-subtitle').textContent = `16×16 · ${total} pinos`;
+  document.getElementById('plate-title').textContent    = `Plate ${label}`;
+  document.getElementById('plate-subtitle').textContent = `16×16 · ${total} studs`;
   document.getElementById('plate-progress-fill').style.width = pct + '%';
   document.getElementById('plate-progress-text').textContent =
-    `${filled} / ${total} preenchidos · ${pct}%`;
+    `${filled} / ${total} filled · ${pct}%`;
 
   // Mini canvas
   const cvs = document.getElementById('plate-canvas');
@@ -1420,7 +1420,7 @@ function renderPlatePanel() {
   drawPlateCells(ctx, pr, pc, S, false);
   drawGridLines(ctx, 16, 16, S, CW, CW, 0.5);
 
-  buildLegendInto(document.getElementById('plate-legend'), counts, 'Nenhuma peça nesta placa');
+  buildLegendInto(document.getElementById('plate-legend'), counts, 'No pieces in this plate');
 }
 
 // Shared: draw the 16×16 cells of a plate at scale S, optional index labels
@@ -1473,10 +1473,10 @@ function renderModal() {
   const { counts, total, filled } = platePieceCounts(pr, pc);
   const pct = total > 0 ? Math.round(filled / total * 100) : 0;
 
-  document.getElementById('modal-plate-title').textContent = `Placa ${label}`;
-  document.getElementById('modal-plate-sub').textContent   = `16×16 · ${total} pinos · linha ${pr + 1}, coluna ${pc + 1}`;
+  document.getElementById('modal-plate-title').textContent = `Plate ${label}`;
+  document.getElementById('modal-plate-sub').textContent   = `16×16 · ${total} studs · row ${pr + 1}, col ${pc + 1}`;
   document.getElementById('modal-pct').textContent          = pct;
-  document.getElementById('modal-progress-text').textContent = `${filled} / ${total} pinos preenchidos`;
+  document.getElementById('modal-progress-text').textContent = `${filled} / ${total} studs filled`;
   document.getElementById('modal-progress-fill').style.width = pct + '%';
 
   // Big canvas with row/column index labels
@@ -1514,7 +1514,7 @@ function renderModal() {
   drawGridLines(ctx, 16, 16, STUD, G, G, 0.6);
   ctx.restore();
 
-  buildLegendInto(document.getElementById('modal-legend'), counts, 'Placa vazia');
+  buildLegendInto(document.getElementById('modal-legend'), counts, 'Empty plate');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1536,7 +1536,7 @@ function zoom(dir) {
 // Clear
 // ═══════════════════════════════════════════════════════
 function clearGrid() {
-  if (!confirm('Limpar toda a grade?')) return;
+  if (!confirm('Clear the entire grid?')) return;
   recordUndo();
   state.cells = new Array(state.cols * state.rows).fill(null);
   renderGrid();
@@ -1603,7 +1603,7 @@ function loadJSON(event) {
       render();
       updateStats();
     } catch {
-      alert('Arquivo inválido.');
+      alert('Invalid file.');
     }
   };
   reader.readAsText(file);
