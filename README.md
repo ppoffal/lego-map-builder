@@ -52,13 +52,6 @@ cd lego-map-builder
 # Open index.html in your browser
 ```
 
-Or serve locally:
-
-```bash
-python3 -m http.server 8000
-# http://localhost:8000
-```
-
 ## Stack
 
 Vanilla **HTML + CSS + JS** in a single `index.html`. Canvas API for rendering. Zero dependencies, zero pipeline.
