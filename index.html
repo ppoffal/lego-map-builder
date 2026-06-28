@@ -1016,7 +1016,10 @@ function suggestFromImage() {
   octx.translate(cols / 2 + state.imageOffsetX * cols, rows / 2 + state.imageOffsetY * rows);
   octx.rotate(state.imageRotation * Math.PI / 180);
   octx.scale(state.imageScale, state.imageScale);
-  octx.drawImage(state.bgImage, -cols / 2, -rows / 2, cols, rows);
+  // Same aspect-ratio logic as renderBackground so sampling matches display
+  const iw = state.bgImage.naturalWidth, ih = state.bgImage.naturalHeight;
+  const s  = Math.min(cols / iw, rows / ih);
+  octx.drawImage(state.bgImage, -(iw * s) / 2, -(ih * s) / 2, iw * s, ih * s);
   const data = octx.getImageData(0, 0, cols, rows).data;
 
   const type = state.selectedType;
@@ -1060,7 +1063,10 @@ function renderBackground() {
     bgCtx.translate(W / 2 + state.imageOffsetX * W, H / 2 + state.imageOffsetY * H);
     bgCtx.rotate(state.imageRotation * Math.PI / 180);
     bgCtx.scale(state.imageScale, state.imageScale);
-    bgCtx.drawImage(state.bgImage, -W / 2, -H / 2, W, H);
+    // Preserve aspect ratio (contain — no stretching)
+    const iw = state.bgImage.naturalWidth, ih = state.bgImage.naturalHeight;
+    const s  = Math.min(W / iw, H / ih);
+    bgCtx.drawImage(state.bgImage, -(iw * s) / 2, -(ih * s) / 2, iw * s, ih * s);
     bgCtx.restore();
   }
 }
